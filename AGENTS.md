@@ -21,6 +21,7 @@ Follows [golang-standards/project-layout](https://github.com/golang-standards/pr
 | `internal/query` | read engine over the archive: topic match, cursor, day listing, scan/tail | [mcp](docs/spec/mcp.md) |
 | `internal/mcpserver` | HTTP wiring: bearer auth, MCP tools, day download, healthz | [mcp](docs/spec/mcp.md) |
 | `build/package/Dockerfile` | multi-stage static build → two scratch images (`--target sink` / `--target mcp`) | — |
+| `deployments/docker-compose.yaml` | example hosting: sink + mcp sharing the archive volume | — |
 | `docs/SPEC.md` | spec index → aspect specs under `docs/spec/` | — |
 | `ci/config.yaml` | jaedle/pipeline-service config (must stay at `ci/`) | — |
 

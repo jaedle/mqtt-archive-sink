@@ -41,16 +41,48 @@ coding agents: MCP tools (`query`, `tail`, `list_days`) over streamable HTTP
 plus a whole-day download that always streams uncompressed NDJSON. Static
 bearer-token auth; see [docs/spec/mcp.md](docs/spec/mcp.md).
 
-```sh
-docker run -d --restart always \
-  -e AUTH_TOKEN=change-me \
-  -v mqtt-archive:/var/lib/mqtt-archive:ro \
-  -p 8080:8080 \
-  jaedle/mqtt-archive-mcp
+### Hosting (docker compose)
 
-curl -H 'Authorization: Bearer change-me' \
+Full example in [deployments/docker-compose.yaml](deployments/docker-compose.yaml)
+— sink and MCP server share one archive volume, the MCP side mounted
+read-only:
+
+```sh
+cd deployments
+MCP_AUTH_TOKEN=$(openssl rand -hex 32) docker compose up -d
+
+curl -H "Authorization: Bearer $MCP_AUTH_TOKEN" \
   http://localhost:8080/days/2026-07-11.ndjson   # whole day, uncompressed
 # MCP endpoint for agents: http://localhost:8080/mcp
+```
+
+### Connecting a local agent (stdio → remote)
+
+Clients that speak streamable HTTP connect directly — e.g. Claude Code:
+
+```sh
+claude mcp add --transport http mqtt-archive http://archive-host:8080/mcp \
+  --header "Authorization: Bearer $MCP_AUTH_TOKEN"
+```
+
+Clients that only spawn stdio servers bridge with
+[`mcp-remote`](https://www.npmjs.com/package/mcp-remote) (the `${AUTH_HEADER}`
+indirection avoids a known issue with spaces in args on some clients):
+
+```json
+{
+  "mcpServers": {
+    "mqtt-archive": {
+      "command": "npx",
+      "args": [
+        "-y", "mcp-remote",
+        "http://archive-host:8080/mcp",
+        "--header", "Authorization:${AUTH_HEADER}"
+      ],
+      "env": { "AUTH_HEADER": "Bearer <MCP_AUTH_TOKEN>" }
+    }
+  }
+}
 ```
 
 ## Subcommands

@@ -13,7 +13,8 @@ Record and file formats are defined by [archival](archival.md) and
 
 Shipped as its own image, `jaedle/mqtt-archive-mcp` (the `mcp` Dockerfile
 target; the sink stays `jaedle/mqtt-archive-sink`). Run it as a second
-container with the archive volume mounted read-only.
+container with the archive volume mounted read-only — example:
+`deployments/docker-compose.yaml`.
 
 ## Configuration (environment variables only)
 

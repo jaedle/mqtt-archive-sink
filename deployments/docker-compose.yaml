@@ -1,0 +1,28 @@
+# Example deployment: sink + read-only MCP server sharing one archive volume.
+#
+#   MCP_AUTH_TOKEN=$(openssl rand -hex 32) docker compose up -d
+#
+# The MCP endpoint is http://<host>:8080/mcp (bearer token required); whole
+# days download from http://<host>:8080/days/YYYY-MM-DD.ndjson. See
+# docs/spec/mcp.md and the README for connecting a local agent over stdio.
+services:
+  sink:
+    image: jaedle/mqtt-archive-sink:latest
+    restart: always
+    environment:
+      MQTT_BROKER: tcp://broker:1883 # point at your broker
+    volumes:
+      - archive:/var/lib/mqtt-archive
+
+  mcp:
+    image: jaedle/mqtt-archive-mcp:latest
+    restart: always
+    environment:
+      AUTH_TOKEN: ${MCP_AUTH_TOKEN:?set MCP_AUTH_TOKEN to a static bearer token}
+    ports:
+      - "8080:8080"
+    volumes:
+      - archive:/var/lib/mqtt-archive:ro # the read side never writes
+
+volumes:
+  archive:
