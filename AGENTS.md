@@ -2,18 +2,19 @@
 
 ## Source of truth
 
-`SPEC.md` defines all behavior and file formats. **Change the spec first, then
-make the code follow.** Tests assert the spec, not the implementation.
+`SPEC.md` is the entry point; it indexes the aspect specs under `spec/` that
+define all behavior and file formats. **Change the spec first, then make the code
+follow.** Tests assert the spec, not the implementation.
 
 ## Layout
 
-| Path | Responsibility |
-|---|---|
-| `main.go` | env config, subcommand dispatch (`run` default, `verify`, `health`) |
-| `internal/app` | wiring: MQTT client → bounded channel → writer; flush/fsync ticks; shutdown; sweep trigger |
-| `internal/archive` | append-only writer of the current daily file: rotation, mid-line repair, flush/fsync |
-| `internal/compress` | background sweep: write `.zst` → verify byte-identical → delete plain; idempotent |
-| `internal/mqtt` | paho wrapper (auto-reconnect, resubscribe on connect), record serialization |
+| Path | Responsibility | Spec |
+|---|---|---|
+| `main.go` | env config, subcommand dispatch (`run` default, `verify`, `health`) | [configuration](spec/configuration.md), [operations](spec/operations.md) |
+| `internal/app` | wiring: MQTT client → bounded channel → writer; flush/fsync ticks; shutdown; sweep trigger | [operations](spec/operations.md) |
+| `internal/archive` | append-only writer of the current daily file: rotation, mid-line repair, flush/fsync | [archival](spec/archival.md) |
+| `internal/compress` | background sweep: write `.zst` → verify byte-identical → delete plain; idempotent | [compression](spec/compression.md) |
+| `internal/mqtt` | paho wrapper (auto-reconnect, resubscribe on connect), record serialization | [ingestion](spec/ingestion.md) |
 
 ## Verification
 
@@ -39,7 +40,7 @@ mochi-mqtt broker. Run it before considering any change done.
 
 ## Conventions
 
-- Config via env vars only (Docker deployment) — see table in SPEC.md
+- Config via env vars only (Docker deployment) — see [spec/configuration.md](spec/configuration.md)
 - Logging: `log/slog`, JSON handler, stderr
 - Tests: `testify`; TDD at the agreed seams: archive writer, app e2e
   (broker→file), reconnect e2e. Mostly high-level tests; lower-level only for
