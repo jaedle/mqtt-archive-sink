@@ -2,18 +2,23 @@
 
 ## Source of truth
 
-`SPEC.md` defines all behavior and file formats. **Change the spec first, then
+`docs/SPEC.md` defines all behavior and file formats. **Change the spec first, then
 make the code follow.** Tests assert the spec, not the implementation.
 
 ## Layout
 
+Follows [golang-standards/project-layout](https://github.com/golang-standards/project-layout).
+
 | Path | Responsibility |
 |---|---|
-| `main.go` | env config, subcommand dispatch (`run` default, `verify`, `health`) |
+| `cmd/mqtt-archive-sink/main.go` | env config, subcommand dispatch (`run` default, `verify`, `health`) |
 | `internal/app` | wiring: MQTT client → bounded channel → writer; flush/fsync ticks; shutdown; sweep trigger |
 | `internal/archive` | append-only writer of the current daily file: rotation, mid-line repair, flush/fsync |
 | `internal/compress` | background sweep: write `.zst` → verify byte-identical → delete plain; idempotent |
 | `internal/mqtt` | paho wrapper (auto-reconnect, resubscribe on connect), record serialization |
+| `build/package/Dockerfile` | multi-stage static build → scratch image |
+| `docs/SPEC.md` | behavior + file-format source of truth |
+| `ci/config.yaml` | jaedle/pipeline-service config (must stay at `ci/`) |
 
 ## Verification
 
@@ -39,7 +44,7 @@ mochi-mqtt broker. Run it before considering any change done.
 
 ## Conventions
 
-- Config via env vars only (Docker deployment) — see table in SPEC.md
+- Config via env vars only (Docker deployment) — see table in docs/SPEC.md
 - Logging: `log/slog`, JSON handler, stderr
 - Tests: `testify`; TDD at the agreed seams: archive writer, app e2e
   (broker→file), reconnect e2e. Mostly high-level tests; lower-level only for

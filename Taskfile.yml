@@ -24,7 +24,7 @@ tasks:
     env:
       CGO_ENABLED: '0'
     cmds:
-      - go build -ldflags='-s -w' -o out/mqtt-archive-sink .
+      - go build -ldflags='-s -w' -o out/mqtt-archive-sink ./cmd/mqtt-archive-sink
 
   ci:
     desc: Full verification - fmt, lint, test, build
@@ -38,4 +38,4 @@ tasks:
     desc: Build and push multi-platform image to Docker Hub
     cmds:
       - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-      - docker buildx build --push --platform linux/arm64,linux/amd64 -t jaedle/mqtt-archive-sink:latest .
+      - docker buildx build --push --platform linux/arm64,linux/amd64 -f build/package/Dockerfile -t jaedle/mqtt-archive-sink:latest .
