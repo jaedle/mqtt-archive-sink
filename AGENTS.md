@@ -2,23 +2,24 @@
 
 ## Source of truth
 
-`docs/SPEC.md` defines all behavior and file formats. **Change the spec first, then
-make the code follow.** Tests assert the spec, not the implementation.
+`docs/SPEC.md` is the entry point; it indexes the aspect specs under `docs/spec/`
+that define all behavior and file formats. **Change the spec first, then make the
+code follow.** Tests assert the spec, not the implementation.
 
 ## Layout
 
 Follows [golang-standards/project-layout](https://github.com/golang-standards/project-layout).
 
-| Path | Responsibility |
-|---|---|
-| `cmd/mqtt-archive-sink/main.go` | env config, subcommand dispatch (`run` default, `verify`, `health`) |
-| `internal/app` | wiring: MQTT client → bounded channel → writer; flush/fsync ticks; shutdown; sweep trigger |
-| `internal/archive` | append-only writer of the current daily file: rotation, mid-line repair, flush/fsync |
-| `internal/compress` | background sweep: write `.zst` → verify byte-identical → delete plain; idempotent |
-| `internal/mqtt` | paho wrapper (auto-reconnect, resubscribe on connect), record serialization |
-| `build/package/Dockerfile` | multi-stage static build → scratch image |
-| `docs/SPEC.md` | behavior + file-format source of truth |
-| `ci/config.yaml` | jaedle/pipeline-service config (must stay at `ci/`) |
+| Path | Responsibility | Spec |
+|---|---|---|
+| `cmd/mqtt-archive-sink/main.go` | env config, subcommand dispatch (`run` default, `verify`, `health`) | [configuration](docs/spec/configuration.md), [operations](docs/spec/operations.md) |
+| `internal/app` | wiring: MQTT client → bounded channel → writer; flush/fsync ticks; shutdown; sweep trigger | [operations](docs/spec/operations.md) |
+| `internal/archive` | append-only writer of the current daily file: rotation, mid-line repair, flush/fsync | [archival](docs/spec/archival.md) |
+| `internal/compress` | background sweep: write `.zst` → verify byte-identical → delete plain; idempotent | [compression](docs/spec/compression.md) |
+| `internal/mqtt` | paho wrapper (auto-reconnect, resubscribe on connect), record serialization | [ingestion](docs/spec/ingestion.md) |
+| `build/package/Dockerfile` | multi-stage static build → scratch image | — |
+| `docs/SPEC.md` | spec index → aspect specs under `docs/spec/` | — |
+| `ci/config.yaml` | jaedle/pipeline-service config (must stay at `ci/`) | — |
 
 ## Verification
 
@@ -44,7 +45,7 @@ mochi-mqtt broker. Run it before considering any change done.
 
 ## Conventions
 
-- Config via env vars only (Docker deployment) — see table in docs/SPEC.md
+- Config via env vars only (Docker deployment) — see [docs/spec/configuration.md](docs/spec/configuration.md)
 - Logging: `log/slog`, JSON handler, stderr
 - Tests: `testify`; TDD at the agreed seams: archive writer, app e2e
   (broker→file), reconnect e2e. Mostly high-level tests; lower-level only for
