@@ -6,7 +6,7 @@ govern.
 
 | Variable | Default | Description |
 |---|---|---|
-| `MQTT_BROKER` | — (required) | Broker URL, e.g. `tcp://broker:1883` |
+| `MQTT_BROKER` | — (required) | Broker URL, e.g. `tcp://broker:1883` or `mqtts://broker:8883` (TLS) |
 | `MQTT_TOPIC` | `#` | Subscription topic filter |
 | `MQTT_CLIENT_ID` | `archiver` | Client ID (stable ⇒ broker session queues while disconnected) |
 | `ARCHIVE_DIR` | `/var/lib/mqtt-archive` | Archive directory |

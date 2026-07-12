@@ -13,7 +13,13 @@ at QoS 1. The initial connect retries forever — the container may start before
 the broker is reachable. Auto-reconnect continues forever with backoff, so the
 process stays up across broker loss; the subscription is re-established on every
 (re)connect. A stable `MQTT_CLIENT_ID` keeps the broker session, which queues
-messages while the sink is disconnected.
+messages while the sink is disconnected. Connect and reconnect failures are
+logged at error level so a permanently failing broker (bad URL, TLS failure)
+is visible, not just `connected:false` in the stats line.
+
+`mqtts://` (and `ssl://`/`tls://`) URLs use TLS with the system CA bundle,
+which the container image ships. A broker certificate signed by a private CA
+requires mounting that CA into `/etc/ssl/certs/`.
 
 ## Receive and buffer
 
