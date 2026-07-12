@@ -1,0 +1,49 @@
+# github.com/davecgh/go-spew v1.1.1
+## explicit
+github.com/davecgh/go-spew/spew
+# github.com/eclipse/paho.mqtt.golang v1.5.1
+## explicit; go 1.24.0
+github.com/eclipse/paho.mqtt.golang
+github.com/eclipse/paho.mqtt.golang/packets
+# github.com/gorilla/websocket v1.5.3
+## explicit; go 1.12
+github.com/gorilla/websocket
+# github.com/klauspost/compress v1.15.15
+## explicit; go 1.17
+github.com/klauspost/compress
+github.com/klauspost/compress/fse
+github.com/klauspost/compress/huff0
+github.com/klauspost/compress/internal/cpuinfo
+github.com/klauspost/compress/internal/snapref
+github.com/klauspost/compress/zstd
+github.com/klauspost/compress/zstd/internal/xxhash
+# github.com/mochi-mqtt/server/v2 v2.7.9
+## explicit; go 1.21
+github.com/mochi-mqtt/server/v2
+github.com/mochi-mqtt/server/v2/hooks/auth
+github.com/mochi-mqtt/server/v2/hooks/storage
+github.com/mochi-mqtt/server/v2/listeners
+github.com/mochi-mqtt/server/v2/mempool
+github.com/mochi-mqtt/server/v2/packets
+github.com/mochi-mqtt/server/v2/system
+# github.com/pmezard/go-difflib v1.0.0
+## explicit
+github.com/pmezard/go-difflib/difflib
+# github.com/rs/xid v1.4.0
+## explicit; go 1.12
+github.com/rs/xid
+# github.com/stretchr/testify v1.11.1
+## explicit; go 1.17
+github.com/stretchr/testify/assert
+github.com/stretchr/testify/assert/yaml
+github.com/stretchr/testify/require
+# golang.org/x/net v0.44.0
+## explicit; go 1.24.0
+golang.org/x/net/internal/socks
+golang.org/x/net/proxy
+# golang.org/x/sync v0.17.0
+## explicit; go 1.24.0
+golang.org/x/sync/semaphore
+# gopkg.in/yaml.v3 v3.0.1
+## explicit
+gopkg.in/yaml.v3
