@@ -32,11 +32,12 @@ tasks:
       - go mod vendor
 
   build:
-    desc: Build static binary
+    desc: Build static binaries
     env:
       CGO_ENABLED: '0'
     cmds:
       - go build -ldflags='-s -w' -o out/mqtt-archive-sink ./cmd/mqtt-archive-sink
+      - go build -ldflags='-s -w' -o out/mqtt-archive-mcp ./cmd/mqtt-archive-mcp
 
   ci:
     desc: Full verification - fmt, lint, test, test:e2e, build (Docker required)
@@ -48,7 +49,8 @@ tasks:
       - task: build
 
   release:
-    desc: Build and push multi-platform image to Docker Hub
+    desc: Build and push multi-platform images to Docker Hub
     cmds:
       - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-      - docker buildx build --push --platform linux/arm64,linux/amd64 -f build/package/Dockerfile -t jaedle/mqtt-archive-sink:latest .
+      - docker buildx build --push --platform linux/arm64,linux/amd64 -f build/package/Dockerfile --target sink -t jaedle/mqtt-archive-sink:latest .
+      - docker buildx build --push --platform linux/arm64,linux/amd64 -f build/package/Dockerfile --target mcp -t jaedle/mqtt-archive-mcp:latest .

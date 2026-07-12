@@ -7,8 +7,9 @@ edit the spec first, then make the code follow. Tests assert this spec.
 
 Subscribe to an MQTT broker and archive every message as one NDJSON line into
 daily files, compressing each closed day to a verified zstd archive. A single
-process owns the whole pipeline: MQTT connection, buffering, writing, rotation,
-compression, flush policy, and heartbeat.
+sink process owns the whole write pipeline: MQTT connection, buffering, writing,
+rotation, compression, flush policy, and heartbeat. A separate read-only process
+exposes the archive to coding agents over MCP.
 
 ## Aspects
 
@@ -22,3 +23,4 @@ own.
 | [Archival](spec/archival.md) | Record format, append-only daily-file writing, durability, rotation, repair |
 | [Compression](spec/compression.md) | Background zstd sweep and the verified archive format |
 | [Operations](spec/operations.md) | Liveness, logging, lifecycle, subcommands, acceptance |
+| [MCP read access](spec/mcp.md) | Read-only MCP server: query/tail/list tools, day download, auth |

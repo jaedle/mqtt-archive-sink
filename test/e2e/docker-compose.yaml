@@ -13,6 +13,7 @@ services:
     build:
       context: ../..
       dockerfile: build/package/Dockerfile
+      target: sink
     environment:
       MQTT_BROKER: tcp://broker:1883
       ARCHIVE_DIR: /data
@@ -23,3 +24,18 @@ services:
       - ${ARCHIVE_HOST_DIR}:/data
     depends_on:
       - broker
+
+  # The read side: same archive, read-only, reachable from the host on an
+  # ephemeral 127.0.0.1 port (no fixed host ports — parallel-safe).
+  mcp:
+    build:
+      context: ../..
+      dockerfile: build/package/Dockerfile
+      target: mcp
+    environment:
+      ARCHIVE_DIR: /data
+      AUTH_TOKEN: ${MCP_AUTH_TOKEN}
+    ports:
+      - "127.0.0.1::8080"
+    volumes:
+      - ${ARCHIVE_HOST_DIR}:/data:ro

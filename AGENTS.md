@@ -13,11 +13,14 @@ Follows [golang-standards/project-layout](https://github.com/golang-standards/pr
 | Path | Responsibility | Spec |
 |---|---|---|
 | `cmd/mqtt-archive-sink/main.go` | env config, subcommand dispatch (`run` default, `verify`, `health`) | [configuration](docs/spec/configuration.md), [operations](docs/spec/operations.md) |
+| `cmd/mqtt-archive-mcp/main.go` | env config, subcommand dispatch (`run` default, `health`) for the read-only MCP server | [mcp](docs/spec/mcp.md) |
 | `internal/app` | wiring: MQTT client → bounded channel → writer; flush/fsync ticks; shutdown; sweep trigger | [operations](docs/spec/operations.md) |
 | `internal/archive` | append-only writer of the current daily file: rotation, mid-line repair, flush/fsync | [archival](docs/spec/archival.md) |
 | `internal/compress` | background sweep: write `.zst` → verify byte-identical → delete plain; idempotent | [compression](docs/spec/compression.md) |
 | `internal/mqtt` | paho wrapper (auto-reconnect, resubscribe on connect), record serialization | [ingestion](docs/spec/ingestion.md) |
-| `build/package/Dockerfile` | multi-stage static build → scratch image | — |
+| `internal/query` | read engine over the archive: topic match, cursor, day listing, scan/tail | [mcp](docs/spec/mcp.md) |
+| `internal/mcpserver` | HTTP wiring: bearer auth, MCP tools, day download, healthz | [mcp](docs/spec/mcp.md) |
+| `build/package/Dockerfile` | multi-stage static build → two scratch images (`--target sink` / `--target mcp`) | — |
 | `docs/SPEC.md` | spec index → aspect specs under `docs/spec/` | — |
 | `ci/config.yaml` | jaedle/pipeline-service config (must stay at `ci/`) | — |
 
@@ -29,15 +32,16 @@ change done.
 - `task test` — unit + embedded in-process mochi-mqtt broker tests. Docker-free,
   no network; the default for fast local iteration.
 - `task test:e2e` — real-infra end-to-end (build tag `e2e`): a dockerized
-  mosquitto broker + the actual sink image via `test/e2e/docker-compose.yaml`.
-  Docker is a **test dependency** here (fine — not a runtime dependency).
+  mosquitto broker + the actual sink and mcp images via
+  `test/e2e/docker-compose.yaml`. Docker is a **test dependency** here (fine —
+  not a runtime dependency).
 
 **The e2e stack must stay safe to run many times concurrently on one machine.**
 Each run uses a unique compose project name (`-p mas-e2e-<pid>`) and its own
-archive dir, and **publishes no host ports** — the broker is reached only over
-the per-run compose network, and messages are published from inside it. Keep it
-that way: no fixed host ports (use the network, or an ephemeral port if ever
-unavoidable).
+archive dir, and **publishes no fixed host ports** — the broker is reached only
+over the per-run compose network (messages are published from inside it), and
+the mcp service maps an **ephemeral** 127.0.0.1 port discovered via
+`docker compose port`. Keep it that way: never a fixed host port.
 
 ## Git workflow
 
@@ -71,4 +75,4 @@ unavoidable).
   plain files are never deleted unless a verified byte-identical `.zst` exists
 - CI: jaedle/pipeline-service reads `ci/config.yaml`; verify job runs
   `task ci`, release job runs `task release` (pushes `jaedle/mqtt-archive-sink`
-  to Docker Hub)
+  and `jaedle/mqtt-archive-mcp` to Docker Hub)
