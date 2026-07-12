@@ -22,9 +22,21 @@ Follows [golang-standards/project-layout](https://github.com/golang-standards/pr
 
 ## Verification
 
-`task ci` = fmt + lint + test + build. **No external dependencies**: no docker,
-no broker, no network — e2e tests run against an embedded in-process
-mochi-mqtt broker. Run it before considering any change done.
+`task ci` = fmt + lint + test + test:e2e + build. Run it before considering any
+change done.
+
+- `task test` — unit + embedded in-process mochi-mqtt broker tests. Docker-free,
+  no network; the default for fast local iteration.
+- `task test:e2e` — real-infra end-to-end (build tag `e2e`): a dockerized
+  mosquitto broker + the actual sink image via `test/e2e/docker-compose.yaml`.
+  Docker is a **test dependency** here (fine — not a runtime dependency).
+
+**The e2e stack must stay safe to run many times concurrently on one machine.**
+Each run uses a unique compose project name (`-p mas-e2e-<pid>`) and its own
+archive dir, and **publishes no host ports** — the broker is reached only over
+the per-run compose network, and messages are published from inside it. Keep it
+that way: no fixed host ports (use the network, or an ephemeral port if ever
+unavoidable).
 
 ## Git workflow
 
@@ -50,6 +62,10 @@ mochi-mqtt broker. Run it before considering any change done.
   (broker→file), reconnect e2e. Mostly high-level tests; lower-level only for
   details unreachable from e2e (fault injection, encoding corners). Never test
   the same behavior twice.
+- Test style: arrange/act/assert as blank-line-separated blocks (no `// ARRANGE`
+  labels); keep bodies short (aim < 20 lines) by pushing polling/decoding/setup
+  into named helpers; no anonymous assertion closures; name every timeout/size
+  constant with a one-line rationale.
 - Invariants: write path only appends, and only to the current daily file;
   plain files are never deleted unless a verified byte-identical `.zst` exists
 - CI: jaedle/pipeline-service reads `ci/config.yaml`; verify job runs
