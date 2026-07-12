@@ -19,6 +19,13 @@ tasks:
     cmds:
       - go test ./...
 
+  manage-dependencies:
+    desc: Verify, tidy, and vendor Go module dependencies
+    cmds:
+      - go mod verify
+      - go mod tidy
+      - go mod vendor
+
   build:
     desc: Build static binary
     env:
