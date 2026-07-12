@@ -1,0 +1,41 @@
+version: '3'
+
+tasks:
+  default:
+    deps: [ci]
+
+  fmt:
+    desc: Format all Go code
+    cmds:
+      - go fmt ./...
+
+  lint:
+    desc: Run golangci-lint
+    cmds:
+      - golangci-lint run
+
+  test:
+    desc: Full test suite (unit + e2e against embedded broker, no external dependencies)
+    cmds:
+      - go test ./...
+
+  build:
+    desc: Build static binary
+    env:
+      CGO_ENABLED: '0'
+    cmds:
+      - go build -ldflags='-s -w' -o out/mqtt-archive-sink .
+
+  ci:
+    desc: Full verification - fmt, lint, test, build
+    cmds:
+      - task: fmt
+      - task: lint
+      - task: test
+      - task: build
+
+  release:
+    desc: Build and push multi-platform image to Docker Hub
+    cmds:
+      - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+      - docker buildx build --push --platform linux/arm64,linux/amd64 -t jaedle/mqtt-archive-sink:latest .
