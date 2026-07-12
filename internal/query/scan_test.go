@@ -86,7 +86,8 @@ func TestCursorSurvivesCompression(t *testing.T) {
 }
 
 // TestTailAcrossRotation asserts a poll loop keeps working while the archive
-// rotates to a new day and the polled day gets compressed away.
+// rotates to a new day and the polled day gets compressed away: the exhausted
+// day rolls the cursor forward with HasMore, the next poll delivers.
 func TestTailAcrossRotation(t *testing.T) {
 	dir := t.TempDir()
 	writeDay(t, dir, "2026-07-10", recordLines("2026-07-10", "before tail")...)
@@ -99,12 +100,36 @@ func TestTailAcrossRotation(t *testing.T) {
 
 	writeDay(t, dir, "2026-07-11", recordLines("2026-07-11", "next day")...)
 	compressDay(t, dir, "2026-07-11")
-	poll2, err := query.Scan(dir, query.ScanRequest{Cursor: poll1.Next}, clockAt("2026-07-11"))
+	rolled, err := query.Scan(dir, query.ScanRequest{Cursor: poll1.Next}, clockAt("2026-07-11"))
+	require.NoError(t, err)
+	poll2, err := query.Scan(dir, query.ScanRequest{Cursor: rolled.Next}, clockAt("2026-07-11"))
 	require.NoError(t, err)
 
 	assert.Equal(t, []string{"live one"}, payloadsOf(poll1.Records))
+	assert.Empty(t, rolled.Records, "exhausted day only rolls the cursor")
+	assert.True(t, rolled.HasMore, "roll signals another poll makes progress")
+	assert.Equal(t, "2026-07-11", rolled.Next.Date, "cursor rolled to the new day")
 	assert.Equal(t, []string{"next day"}, payloadsOf(poll2.Records))
-	assert.Equal(t, "2026-07-11", poll2.Next.Date, "cursor rolled to the new day")
+}
+
+// TestScanReadsAtMostOneDayPerCall asserts the bounded-work contract: a call
+// never decodes more than one day file; later days are reached via HasMore.
+func TestScanReadsAtMostOneDayPerCall(t *testing.T) {
+	dir := t.TempDir()
+	writeDay(t, dir, "2026-07-09", recordLines("2026-07-09", "day one")...)
+	writeDay(t, dir, "2026-07-10", recordLines("2026-07-10", "day two")...)
+	clock := clockAt("2026-07-10")
+
+	first, err := query.Scan(dir, query.ScanRequest{}, clock)
+	require.NoError(t, err)
+	second, err := query.Scan(dir, query.ScanRequest{Cursor: first.Next}, clock)
+	require.NoError(t, err)
+
+	assert.Equal(t, []string{"day one"}, payloadsOf(first.Records))
+	assert.True(t, first.HasMore)
+	assert.Equal(t, query.Cursor{Date: "2026-07-10"}, first.Next)
+	assert.Equal(t, []string{"day two"}, payloadsOf(second.Records))
+	assert.False(t, second.HasMore)
 }
 
 func TestTornLineIsWithheldUntilTerminated(t *testing.T) {

@@ -51,12 +51,15 @@ that would require decoding every day.
 
 ### `query`
 
-Historical range scan with pagination.
+Historical scan of **one UTC day** with pagination — unbounded whole-archive
+scans are disallowed.
 
-Input: `from`/`to` (RFC3339, optional), `topic` (MQTT topic filter with `+`/`#`
-wildcards, default `#`), `limit` (1–1000, default 100), `cursor` (opaque, from
-a previous response; non-cursor parameters must be repeated on continuation
-calls).
+Input: `from` (RFC3339, **required**), `to` (RFC3339, optional — defaults to
+the end of `from`'s UTC day and must lie on that same day, otherwise the call
+errors), `topic` (MQTT topic filter with `+`/`#` wildcards, default `#`),
+`limit` (1–1000, default 100), `cursor` (opaque, from a previous response;
+non-cursor parameters must be repeated unchanged on continuation calls — a
+cursor belonging to a different day than `from` is an error).
 
 Output:
 
@@ -64,10 +67,10 @@ Output:
 {"records":[{"ts":"...","topic":"...","payload":"..."}],"next_cursor":"...","has_more":true,"invalid_lines":0}
 ```
 
-Records are returned in archive order. Day files are selected by filename date
-within `[from, to]`; each record is then filtered by its `ts` and the topic
-filter. Records use exactly the archived field set (`payload` or
-`payload_b64`).
+Records are returned in archive order from `from`'s day file, filtered by
+`ts ∈ [from, to]` and the topic filter, using exactly the archived field set
+(`payload` or `payload_b64`). Multi-day investigations issue one query per
+day (`list_days` shows what exists).
 
 ### `tail`
 
@@ -77,7 +80,15 @@ Cursor-based polling for new events. Input: `cursor` (optional), `topic`
 The first call (no cursor) returns no records and a cursor positioned at the
 current end of the archive ("start from now"); subsequent calls return only
 lines appended since the given cursor. Polling survives day rotation and
-compression of the polled day.
+compression of the polled day: when the cursor's day is exhausted and a newer
+day exists, the call returns `has_more: true` with the cursor rolled to that
+day — poll again immediately.
+
+### Bounded work
+
+Every tool call reads **at most one day file**. `has_more` means a further
+call with `next_cursor` makes progress (more records in the day, or the
+cursor rolled to a newer day).
 
 ## Cursor semantics
 

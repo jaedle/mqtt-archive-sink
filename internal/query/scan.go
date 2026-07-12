@@ -19,7 +19,7 @@ type Record struct {
 type ScanRequest struct {
 	From, To time.Time // zero value = unbounded
 	Topic    string    // MQTT topic filter; "" = "#"
-	Cursor   Cursor    // zero value = start at the first archived day
+	Cursor   Cursor    // zero value = start at From's day (or the first archived day)
 	Limit    int       // max records returned; <= 0 = unlimited
 }
 
@@ -27,13 +27,17 @@ type ScanResult struct {
 	Records []Record
 	// Next continues the scan; with HasMore=false it points at the current
 	// end of the scanned data, so polling it acts as a tail.
-	Next         Cursor
+	Next Cursor
+	// HasMore reports that another call with Next makes progress: more
+	// records in the day, or the cursor rolled to a newer day.
 	HasMore      bool
 	InvalidLines int
 }
 
-// Scan walks day files in date order from the cursor (or the range start),
-// returning records that fall in [From, To] and match the topic filter.
+// Scan reads at most one day file per call (docs/spec/mcp.md, bounded work):
+// the cursor's day — or From's day, or the first archived day — filtered by
+// [From, To] and the topic filter. Once the day is exhausted, Next rolls to
+// the next existing day within the range with HasMore set.
 func Scan(dir string, req ScanRequest, now func() time.Time) (ScanResult, error) {
 	days, err := ListDays(dir, now)
 	if err != nil {
@@ -46,30 +50,36 @@ func Scan(dir string, req ScanRequest, now func() time.Time) (ScanResult, error)
 
 	res := ScanResult{Next: req.Cursor}
 	if res.Next.Date == "" {
-		res.Next = Cursor{Date: today(now)}
-		if len(days) > 0 {
-			res.Next.Date = days[0].Date
-		}
+		res.Next = Cursor{Date: startDate(req, days, now)}
+	}
+
+	done, err := scanDay(dir, res.Next, filter, req, &res)
+	if err != nil {
+		return ScanResult{}, err
+	}
+	if done {
+		res.HasMore = true
+		return res, nil
 	}
 
 	for _, day := range days {
-		if day.Date < res.Next.Date || beforeDay(req.From, day.Date) || afterDay(req.To, day.Date) {
-			continue
-		}
-		at := Cursor{Date: day.Date}
-		if day.Date == res.Next.Date {
-			at = res.Next
-		}
-		done, err := scanDay(dir, at, filter, req, &res)
-		if err != nil {
-			return ScanResult{}, err
-		}
-		if done {
+		if day.Date > res.Next.Date && !afterDay(req.To, day.Date) {
+			res.Next = Cursor{Date: day.Date}
 			res.HasMore = true
-			return res, nil
+			break
 		}
 	}
 	return res, nil
+}
+
+func startDate(req ScanRequest, days []DayInfo, now func() time.Time) string {
+	if !req.From.IsZero() {
+		return req.From.UTC().Format(archive.DateFormat)
+	}
+	if len(days) > 0 {
+		return days[0].Date
+	}
+	return today(now)
 }
 
 // scanDay consumes one day from at; done reports that the limit was hit.
@@ -152,10 +162,6 @@ func parseRecord(line []byte) (Record, time.Time, bool) {
 		return Record{}, time.Time{}, false
 	}
 	return r, ts, true
-}
-
-func beforeDay(from time.Time, date string) bool {
-	return !from.IsZero() && date < from.UTC().Format(archive.DateFormat)
 }
 
 func afterDay(to time.Time, date string) bool {

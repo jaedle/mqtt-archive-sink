@@ -2,9 +2,11 @@ package mcpserver
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
+	"github.com/jaedle/mqtt-archive-sink/internal/archive"
 	"github.com/jaedle/mqtt-archive-sink/internal/query"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
@@ -19,8 +21,8 @@ type listDaysOutput struct {
 }
 
 type queryInput struct {
-	From   string `json:"from,omitempty" jsonschema:"start of the time range, RFC3339 (optional)"`
-	To     string `json:"to,omitempty" jsonschema:"end of the time range, RFC3339 (optional)"`
+	From   string `json:"from" jsonschema:"start of the time range, RFC3339; a query scans only this UTC day"`
+	To     string `json:"to,omitempty" jsonschema:"end of the time range, RFC3339, on the same UTC day as from (default: end of from's day)"`
 	Topic  string `json:"topic,omitempty" jsonschema:"MQTT topic filter with + and # wildcards (default #)"`
 	Limit  int    `json:"limit,omitempty" jsonschema:"max records per call, 1-1000 (default 100)"`
 	Cursor string `json:"cursor,omitempty" jsonschema:"opaque continuation cursor from a previous response"`
@@ -47,13 +49,15 @@ func newMCPServer(cfg Config) *mcp.Server {
 	}, listDaysTool(cfg))
 	mcp.AddTool(s, &mcp.Tool{
 		Name: "query",
-		Description: "Query archived MQTT messages by time range and topic filter, oldest first. " +
+		Description: "Query archived MQTT messages of one UTC day by time range and topic filter, oldest first. " +
+			"from is required; to must stay on the same UTC day (default: end of from's day) — issue one query per day for longer investigations. " +
 			"Pass next_cursor from the previous response to continue; repeat the other parameters unchanged on continuation calls.",
 	}, queryTool(cfg))
 	mcp.AddTool(s, &mcp.Tool{
 		Name: "tail",
 		Description: "Poll for newly archived MQTT messages. The first call (without cursor) returns no records and a " +
-			"cursor at the current end of the archive; keep calling with the returned cursor to receive new messages.",
+			"cursor at the current end of the archive; keep calling with the returned cursor to receive new messages. " +
+			"An empty response with has_more=true means the cursor rolled to a newer day — poll again immediately.",
 	}, tailTool(cfg))
 	return s
 }
@@ -73,18 +77,9 @@ func listDaysTool(cfg Config) mcp.ToolHandlerFor[struct{}, listDaysOutput] {
 
 func queryTool(cfg Config) mcp.ToolHandlerFor[queryInput, scanOutput] {
 	return func(_ context.Context, _ *mcp.CallToolRequest, in queryInput) (*mcp.CallToolResult, scanOutput, error) {
-		req := query.ScanRequest{Topic: in.Topic, Limit: clampLimit(in.Limit)}
-		var err error
-		if req.From, err = parseTime("from", in.From); err != nil {
+		req, err := boundedScanRequest(in)
+		if err != nil {
 			return nil, scanOutput{}, err
-		}
-		if req.To, err = parseTime("to", in.To); err != nil {
-			return nil, scanOutput{}, err
-		}
-		if in.Cursor != "" {
-			if req.Cursor, err = query.DecodeCursor(in.Cursor); err != nil {
-				return nil, scanOutput{}, err
-			}
 		}
 		res, err := query.Scan(cfg.ArchiveDir, req, cfg.Now)
 		if err != nil {
@@ -92,6 +87,47 @@ func queryTool(cfg Config) mcp.ToolHandlerFor[queryInput, scanOutput] {
 		}
 		return nil, toScanOutput(res), nil
 	}
+}
+
+// boundedScanRequest enforces the one-UTC-day-per-query contract
+// (docs/spec/mcp.md): from is required, to and cursor must stay on its day.
+func boundedScanRequest(in queryInput) (query.ScanRequest, error) {
+	if in.From == "" {
+		return query.ScanRequest{}, errors.New("from is required: a query scans at most one UTC day")
+	}
+	from, err := parseTime("from", in.From)
+	if err != nil {
+		return query.ScanRequest{}, err
+	}
+	day := from.UTC().Format(archive.DateFormat)
+
+	to := endOfDay(from)
+	if in.To != "" {
+		if to, err = parseTime("to", in.To); err != nil {
+			return query.ScanRequest{}, err
+		}
+		if to.UTC().Format(archive.DateFormat) != day {
+			return query.ScanRequest{}, fmt.Errorf("to must be on the same UTC day as from (%s): query one day per call", day)
+		}
+		if to.Before(from) {
+			return query.ScanRequest{}, errors.New("to must not be before from")
+		}
+	}
+
+	req := query.ScanRequest{From: from, To: to, Topic: in.Topic, Limit: clampLimit(in.Limit)}
+	if in.Cursor != "" {
+		if req.Cursor, err = query.DecodeCursor(in.Cursor); err != nil {
+			return query.ScanRequest{}, err
+		}
+		if req.Cursor.Date != day {
+			return query.ScanRequest{}, fmt.Errorf("cursor belongs to %s, not to from's day %s", req.Cursor.Date, day)
+		}
+	}
+	return req, nil
+}
+
+func endOfDay(t time.Time) time.Time {
+	return t.UTC().Truncate(24 * time.Hour).Add(24*time.Hour - time.Nanosecond)
 }
 
 func tailTool(cfg Config) mcp.ToolHandlerFor[tailInput, scanOutput] {

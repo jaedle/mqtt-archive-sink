@@ -15,6 +15,7 @@ import (
 
 	"github.com/jaedle/mqtt-archive-sink/internal/compress"
 	"github.com/jaedle/mqtt-archive-sink/internal/mcpserver"
+	"github.com/jaedle/mqtt-archive-sink/internal/query"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -94,8 +95,9 @@ func TestQueryToolPaginates(t *testing.T) {
 	)
 	session := connect(t, newServer(t, dir))
 
-	first := callTool(t, session, "query", map[string]any{"limit": 2})
-	rest := callTool(t, session, "query", map[string]any{"limit": 2, "cursor": first["next_cursor"]})
+	from := "2026-07-10T00:00:00Z"
+	first := callTool(t, session, "query", map[string]any{"from": from, "limit": 2})
+	rest := callTool(t, session, "query", map[string]any{"from": from, "limit": 2, "cursor": first["next_cursor"]})
 
 	assert.Equal(t, []string{"one", "two"}, payloadsOf(t, first))
 	assert.Equal(t, true, first["has_more"])
@@ -120,8 +122,12 @@ func TestQueryToolRejectsBadInput(t *testing.T) {
 	session := connect(t, newServer(t, t.TempDir()))
 
 	for name, args := range map[string]map[string]any{
-		"bad from":   {"from": "yesterday-ish"},
-		"bad cursor": {"cursor": "garbage"},
+		"missing from (unbounded scan)": {},
+		"bad from":                      {"from": "yesterday-ish"},
+		"to on another day":             {"from": "2026-07-10T00:00:00Z", "to": "2026-07-11T00:00:00Z"},
+		"to before from":                {"from": "2026-07-10T12:00:00Z", "to": "2026-07-10T06:00:00Z"},
+		"bad cursor":                    {"from": "2026-07-10T00:00:00Z", "cursor": "garbage"},
+		"cursor from another day":       {"from": "2026-07-10T00:00:00Z", "cursor": query.EncodeCursor(query.Cursor{Date: "2026-07-09"})},
 	} {
 		res, err := session.CallTool(t.Context(), &mcp.CallToolParams{Name: "query", Arguments: args})
 

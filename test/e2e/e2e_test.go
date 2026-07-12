@@ -172,7 +172,8 @@ func (s *stack) queryOverMCP(topic string) []string {
 	require.NoError(s.t, err)
 	defer func() { _ = session.Close() }()
 
-	res, err := session.CallTool(ctx, &mcp.CallToolParams{Name: "query", Arguments: map[string]any{"topic": topic}})
+	from := time.Now().UTC().Format("2006-01-02") + "T00:00:00Z" // query scans one UTC day
+	res, err := session.CallTool(ctx, &mcp.CallToolParams{Name: "query", Arguments: map[string]any{"topic": topic, "from": from}})
 	require.NoError(s.t, err)
 	require.Falsef(s.t, res.IsError, "query tool failed: %+v", res.Content)
 	return payloadsOf(s.t, res.StructuredContent)
