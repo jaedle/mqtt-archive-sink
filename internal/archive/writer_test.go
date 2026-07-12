@@ -12,19 +12,24 @@ import (
 )
 
 func TestCrashTruncatedLineIsRepairedOnOpen(t *testing.T) {
+	const (
+		completeLine = `{"complete":1}`
+		partialLine  = `{"partial` // crash left this line unterminated
+		nextLine     = `{"next":2}`
+	)
 	dir := t.TempDir()
 	path := filepath.Join(dir, "2026-03-01.ndjson")
-	require.NoError(t, os.WriteFile(path, []byte("{\"complete\":1}\n{\"partial"), 0o644))
+	require.NoError(t, os.WriteFile(path, []byte(completeLine+"\n"+partialLine), 0o644))
 
 	clock := func() time.Time { return time.Date(2026, 3, 1, 8, 0, 0, 0, time.UTC) }
-	w := archive.NewWriter(dir, clock, true)
-	_, err := w.Append([]byte(`{"next":2}`))
+	writer := archive.NewWriter(dir, clock, true)
+	_, err := writer.Append([]byte(nextLine))
 	require.NoError(t, err)
-	require.NoError(t, w.Close())
+	require.NoError(t, writer.Close())
 
 	data, err := os.ReadFile(path)
 	require.NoError(t, err)
-	assert.Equal(t, "{\"complete\":1}\n{\"partial\n{\"next\":2}\n", string(data),
-		"partial line must be terminated, not truncated; next line intact")
-	assert.EqualValues(t, 1, w.Repaired())
+	repaired := completeLine + "\n" + partialLine + "\n" + nextLine + "\n"
+	assert.Equal(t, repaired, string(data), "partial line terminated, not truncated; next line intact")
+	assert.EqualValues(t, 1, writer.Repaired())
 }

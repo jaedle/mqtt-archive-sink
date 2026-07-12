@@ -1,0 +1,25 @@
+# Real-infra e2e stack: a real mosquitto broker + the actual sink image.
+#
+# Parallel-safe by construction (see AGENTS.md): callers pass a unique -p project
+# name and a per-run ARCHIVE_HOST_DIR. No host ports are published — the broker is
+# reached only over this compose network, so concurrent runs never collide.
+services:
+  broker:
+    image: eclipse-mosquitto:2
+    volumes:
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+
+  sink:
+    build:
+      context: ../..
+      dockerfile: build/package/Dockerfile
+    environment:
+      MQTT_BROKER: tcp://broker:1883
+      ARCHIVE_DIR: /data
+      FLUSH_INTERVAL: 1s
+      FSYNC_INTERVAL: 2s
+      HEARTBEAT_FILE: /data/heartbeat
+    volumes:
+      - ${ARCHIVE_HOST_DIR}:/data
+    depends_on:
+      - broker

@@ -15,9 +15,14 @@ tasks:
       - golangci-lint run
 
   test:
-    desc: Full test suite (unit + e2e against embedded broker, no external dependencies)
+    desc: Unit + embedded-broker tests (no external dependencies, Docker-free)
     cmds:
       - go test ./...
+
+  test:e2e:
+    desc: End-to-end against a real dockerized broker + sink (Docker required)
+    cmds:
+      - go test -tags e2e -count=1 ./test/e2e/...
 
   manage-dependencies:
     desc: Verify, tidy, and vendor Go module dependencies
@@ -34,11 +39,12 @@ tasks:
       - go build -ldflags='-s -w' -o out/mqtt-archive-sink ./cmd/mqtt-archive-sink
 
   ci:
-    desc: Full verification - fmt, lint, test, build
+    desc: Full verification - fmt, lint, test, test:e2e, build (Docker required)
     cmds:
       - task: fmt
       - task: lint
       - task: test
+      - task: test:e2e
       - task: build
 
   release:

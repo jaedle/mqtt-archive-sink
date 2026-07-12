@@ -45,12 +45,23 @@ zstdcat 2026-07-11.ndjson.zst  # closed days
 
 ```sh
 mise install
-task ci   # fmt + lint + test + build — no external dependencies
+task test      # unit + embedded-broker tests — Docker-free, fast
+task test:e2e  # real dockerized broker + sink image — needs Docker
+task ci        # fmt + lint + test + test:e2e + build (needs Docker)
 ```
 
-E2e tests run against an embedded in-process MQTT broker. CI is managed by
+Two test layers: `task test` runs against an embedded in-process MQTT broker (no
+external dependencies); `task test:e2e` (build tag `e2e`,
+[test/e2e](test/e2e)) starts a real mosquitto broker and the actual sink image via
+Docker Compose and asserts a published message lands in the archive. It is
+parallel-safe — each run uses a unique compose project name and no host ports —
+so many can run at once on one machine. Both layers run in CI, managed by
 [pipeline-service](https://github.com/jaedle/pipeline-service) via
 `ci/config.yaml`; release pushes `jaedle/mqtt-archive-sink` to Docker Hub.
+
+Tests follow arrange/act/assert as blank-line-separated blocks (no comment
+labels), keep bodies short by extracting named helpers, and name every
+timeout/size constant.
 
 Changes go branch → PR, never directly to `main` — see the git workflow in
 [AGENTS.md](AGENTS.md).
