@@ -2,7 +2,7 @@
 
 verify:
   enabled: true
-  docker: false
+  docker: true
 
 release:
   enabled: true
