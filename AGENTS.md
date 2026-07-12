@@ -21,6 +21,22 @@ make the code follow.** Tests assert the spec, not the implementation.
 no broker, no network — e2e tests run against an embedded in-process
 mochi-mqtt broker. Run it before considering any change done.
 
+## Git workflow
+
+**Never commit on `main`.** Every change follows branch → commit → push → PR:
+
+1. Branch from fresh `main`: `git switch main && git pull`, then
+   `git switch -c <type>/<short-kebab-slug>` (e.g. `feat/add-xyz`).
+   Types are conventional-commit types: `feat`, `fix`, `docs`, `refactor`,
+   `test`, `chore`, `perf`, `ci`.
+2. Do the work; done = `task ci` green (see Verification). That is this
+   repo's pre-commit check — not pnpm.
+3. Commit with the `/commit` skill (emoji conventional commits).
+4. Push: `git push -u origin <branch>`.
+5. Raise the PR immediately, ready for review:
+   `gh pr create --base main --title "<conventional title>" --body "<summary + verification>"`.
+   Report the PR URL.
+
 ## Conventions
 
 - Config via env vars only (Docker deployment) — see table in SPEC.md

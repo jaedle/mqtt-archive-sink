@@ -52,6 +52,9 @@ E2e tests run against an embedded in-process MQTT broker. CI is managed by
 [pipeline-service](https://github.com/jaedle/pipeline-service) via
 `ci/config.yaml`; release pushes `jaedle/mqtt-archive-sink` to Docker Hub.
 
+Changes go branch → PR, never directly to `main` — see the git workflow in
+[AGENTS.md](AGENTS.md).
+
 ## Deployment notes
 
 - QoS 1 is at-least-once: duplicates are possible, so message-count checks
