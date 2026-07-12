@@ -1,7 +1,7 @@
 # mqtt-archive-sink
 
 Archives every MQTT message as NDJSON into daily files; closed days are
-compressed to verified zstd archives. Behavior is defined in [SPEC.md](SPEC.md)
+compressed to verified zstd archives. Behavior is defined in [SPEC.md](docs/SPEC.md)
 — the single source of truth.
 
 ## Run
