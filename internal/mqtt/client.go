@@ -1,7 +1,9 @@
 package mqtt
 
 import (
+	"fmt"
 	"log/slog"
+	"strings"
 	"time"
 
 	paho "github.com/eclipse/paho.mqtt.golang"
@@ -27,6 +29,12 @@ type Client struct {
 // re-established) in the background. The subscription is renewed on every
 // (re)connect so a broker that lost its session state still delivers.
 func Connect(cfg Config) *Client {
+	// paho reports (re)connect failures only through these package-level
+	// loggers, which are no-ops by default — without them a bad broker URL
+	// or failing TLS handshake retries forever in silence.
+	paho.ERROR = pahoLogger{cfg.Logger}
+	paho.CRITICAL = pahoLogger{cfg.Logger}
+
 	opts := paho.NewClientOptions().
 		AddBroker(cfg.Broker).
 		SetClientID(cfg.ClientID).
@@ -63,4 +71,16 @@ func Connect(cfg Config) *Client {
 
 func (c *Client) Disconnect() {
 	c.paho.Disconnect(1000)
+}
+
+type pahoLogger struct {
+	logger *slog.Logger
+}
+
+func (l pahoLogger) Println(v ...interface{}) {
+	l.logger.Error(strings.TrimSuffix(fmt.Sprintln(v...), "\n"))
+}
+
+func (l pahoLogger) Printf(format string, v ...interface{}) {
+	l.logger.Error(fmt.Sprintf(format, v...))
 }
