@@ -17,7 +17,9 @@ at 10s.
 
 `HEARTBEAT_FILE`: an empty file whose mtime is the last flush tick. Freshness
 contract: an mtime older than 5 minutes means unhealthy (used by the `health`
-subcommand and external alerting).
+subcommand and external alerting). Because the heartbeat is touched only on
+the flush tick, `FLUSH_INTERVAL` must stay well under 5 minutes — above that,
+a healthy process reports unhealthy.
 
 ## Logging
 
@@ -35,6 +37,15 @@ A write, flush, fsync, or rotation error on the active file is logged and the
 process exits non-zero. The container restart policy is the retry, and the broker
 session queue covers the gap. Compression sweep errors are logged and the process
 keeps running (see [compression](compression.md)).
+
+## Retention
+
+There is none: the archive grows forever, and the sink never deletes anything
+except a plain daily file whose verified `.zst` replacement exists (see
+[compression](compression.md)). Pruning old days is external (cron, manual).
+Deleting closed `.zst` days is safe — the write path never touches days other
+than the current one, and an MCP cursor pointing at a deleted day errors,
+instructing the client to restart (see [mcp](mcp.md)).
 
 ## Subcommands
 

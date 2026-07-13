@@ -27,11 +27,25 @@ docker run -d --restart always \
 | `ZSTD_LEVEL` | `19` |
 | `BUFFER_SIZE` | `10000` |
 
+Broker credentials go in the URL: `MQTT_BROKER=tcp://user:pass@broker:1883`.
+Keep `FLUSH_INTERVAL` well under 5 minutes — the heartbeat is touched on the
+flush tick and the health check fails once it is older than 5 minutes.
+
 ## Reading archives
+
+Files are named by the **UTC** date at write time, so late-evening local
+messages may land in the next day's file.
 
 ```sh
 cat 2026-07-12.ndjson          # today (plain)
 zstdcat 2026-07-11.ndjson.zst  # closed days
+```
+
+One JSON object per line; payloads that are not valid UTF-8 carry
+`payload_b64` (base64) instead of `payload`:
+
+```json
+{"ts":"2026-07-12T14:03:07.123456789Z","topic":"home/sensor/temp","payload":"21.5"}
 ```
 
 ## MCP read access
@@ -126,3 +140,6 @@ Changes go branch → PR, never directly to `main` — see the git workflow in
 - Outage coverage while the sink is down is bounded by the broker's queue for
   persistent sessions (mosquitto: `max_queued_messages`, default 1000 — raise
   it).
+- There is no built-in retention: the archive grows forever. Prune old `.zst`
+  files externally (cron, manual) — deleting closed days is safe; the sink
+  never touches days other than the current one.
