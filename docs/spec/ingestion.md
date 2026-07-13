@@ -17,6 +17,12 @@ messages while the sink is disconnected. Connect and reconnect failures are
 logged at error level so a permanently failing broker (bad URL, TLS failure)
 is visible, not just `connected:false` in the stats line.
 
+Brokers that require authentication take credentials as URL userinfo in
+`MQTT_BROKER`, e.g. `tcp://user:pass@broker:1883` — they are sent as the MQTT
+username/password in the CONNECT packet. Reserved characters in the username or
+password must be percent-encoded. Note that anything with access to the
+process environment can read the URL, credentials included.
+
 `mqtts://` (and `ssl://`/`tls://`) URLs use TLS with the system CA bundle,
 which the container image ships. A broker certificate signed by a private CA
 requires mounting that CA into `/etc/ssl/certs/`.
