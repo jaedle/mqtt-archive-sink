@@ -130,7 +130,8 @@ client to restart without a cursor.
 
 ## Logging
 
-All logging via `log/slog`, JSON handler, stderr.
+All logging via `log/slog`, JSON handler, stderr. On startup the process emits
+one `starting` record including the build version (`dev` for untagged builds).
 
 ## Acceptance
 

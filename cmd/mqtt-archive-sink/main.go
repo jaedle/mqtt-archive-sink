@@ -17,6 +17,9 @@ import (
 
 const heartbeatMaxAge = 5 * time.Minute
 
+// version is stamped via -ldflags at release build time.
+var version = "dev"
+
 func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stderr, nil))
 
@@ -43,6 +46,8 @@ func main() {
 }
 
 func runSink(logger *slog.Logger) error {
+	logger.Info("starting", "version", version)
+
 	broker := os.Getenv("MQTT_BROKER")
 	if broker == "" {
 		return fmt.Errorf("MQTT_BROKER is required")

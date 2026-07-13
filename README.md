@@ -123,8 +123,12 @@ served back over MCP. It is parallel-safe — each run uses a unique compose
 project name and no fixed host ports — so many can run at once on one machine.
 Both layers run in CI, managed by
 [pipeline-service](https://github.com/jaedle/pipeline-service) via
-`ci/config.yaml`; release pushes `jaedle/mqtt-archive-sink` and
-`jaedle/mqtt-archive-mcp` to Docker Hub.
+`ci/config.yaml`. Releases are fully automated on `main` with
+[semantic-release](https://semantic-release.gitbook.io/): the version is derived
+from the conventional commits since the last release, which then gets a git tag,
+a GitHub release, a generated `CHANGELOG.md` commit, and `jaedle/mqtt-archive-sink`
+and `jaedle/mqtt-archive-mcp` pushed to Docker Hub tagged `:X.Y.Z` and `:latest`,
+with the version embedded in the binaries (logged at startup).
 
 Tests follow arrange/act/assert as blank-line-separated blocks (no comment
 labels), keep bodies short by extracting named helpers, and name every
