@@ -75,5 +75,9 @@ the mcp service maps an **ephemeral** 127.0.0.1 port discovered via
 - Invariants: write path only appends, and only to the current daily file;
   plain files are never deleted unless a verified byte-identical `.zst` exists
 - CI: jaedle/pipeline-service reads `ci/config.yaml`; verify job runs
-  `task ci`, release job runs `task release` (pushes `jaedle/mqtt-archive-sink`
-  and `jaedle/mqtt-archive-mcp` to Docker Hub)
+  `task ci`, release job runs `task release` = semantic-release
+  (`release.config.mjs`): derives the version from conventional commits, pushes
+  the git tag, publishes a GitHub release, commits the generated `CHANGELOG.md`
+  to `main` (the release bot is the one sanctioned exception to "never commit on
+  `main`"), and calls `task release:publish` to push `jaedle/mqtt-archive-sink`
+  and `jaedle/mqtt-archive-mcp` to Docker Hub tagged `:X.Y.Z` + `:latest`

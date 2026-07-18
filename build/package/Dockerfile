@@ -4,8 +4,9 @@ COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
 ARG TARGETOS TARGETARCH
-RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -ldflags='-s -w' -o /mqtt-archive-sink ./cmd/mqtt-archive-sink
-RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -ldflags='-s -w' -o /mqtt-archive-mcp ./cmd/mqtt-archive-mcp
+ARG VERSION=dev
+RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -ldflags="-s -w -X main.version=${VERSION}" -o /mqtt-archive-sink ./cmd/mqtt-archive-sink
+RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -ldflags="-s -w -X main.version=${VERSION}" -o /mqtt-archive-mcp ./cmd/mqtt-archive-mcp
 
 FROM scratch AS mcp
 COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/

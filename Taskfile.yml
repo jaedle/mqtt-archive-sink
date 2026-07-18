@@ -49,8 +49,16 @@ tasks:
       - task: build
 
   release:
-    desc: Build and push multi-platform images to Docker Hub
+    desc: Run semantic-release - tags, GitHub release, changelog, versioned images (release:publish)
+    cmds:
+      - npm clean-install
+      - npx semantic-release
+
+  release:publish:
+    desc: Build and push multi-platform images to Docker Hub, tagged VERSION and latest (called by semantic-release)
+    requires:
+      vars: [VERSION]
     cmds:
       - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-      - docker buildx build --push --platform linux/arm64,linux/amd64 -f build/package/Dockerfile --target sink -t jaedle/mqtt-archive-sink:latest .
-      - docker buildx build --push --platform linux/arm64,linux/amd64 -f build/package/Dockerfile --target mcp -t jaedle/mqtt-archive-mcp:latest .
+      - docker buildx build --push --platform linux/arm64,linux/amd64 -f build/package/Dockerfile --build-arg VERSION={{.VERSION}} --target sink -t jaedle/mqtt-archive-sink:{{.VERSION}} -t jaedle/mqtt-archive-sink:latest .
+      - docker buildx build --push --platform linux/arm64,linux/amd64 -f build/package/Dockerfile --build-arg VERSION={{.VERSION}} --target mcp -t jaedle/mqtt-archive-mcp:{{.VERSION}} -t jaedle/mqtt-archive-mcp:latest .

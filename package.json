@@ -1,0 +1,12 @@
+{
+  "name": "mqtt-archive-sink-release",
+  "private": true,
+  "description": "semantic-release tooling only; the project itself is Go",
+  "devDependencies": {
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/exec": "^7.1.0",
+    "@semantic-release/git": "^10.0.1",
+    "conventional-changelog-conventionalcommits": "^9.1.0",
+    "semantic-release": "^24.2.9"
+  }
+}

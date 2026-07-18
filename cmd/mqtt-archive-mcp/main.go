@@ -17,6 +17,9 @@ import (
 
 const shutdownGrace = 10 * time.Second
 
+// version is stamped via -ldflags at release build time.
+var version = "dev"
+
 func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stderr, nil))
 
@@ -37,6 +40,8 @@ func main() {
 }
 
 func runServer(logger *slog.Logger) error {
+	logger.Info("starting", "version", version)
+
 	handler, err := mcpserver.NewHandler(mcpserver.Config{
 		ArchiveDir: envOr("ARCHIVE_DIR", "/var/lib/mqtt-archive"),
 		Token:      os.Getenv("AUTH_TOKEN"),

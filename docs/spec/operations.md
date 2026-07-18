@@ -23,8 +23,9 @@ a healthy process reports unhealthy.
 
 ## Logging
 
-All logging goes through `log/slog` with the JSON handler on stderr. One stats
-record is emitted per flush tick.
+All logging goes through `log/slog` with the JSON handler on stderr. On startup
+the process emits one `starting` record including the build version (`dev` for
+untagged builds). One stats record is emitted per flush tick.
 
 ## Shutdown
 
