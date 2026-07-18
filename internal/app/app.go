@@ -2,7 +2,11 @@ package app
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"log/slog"
+	"net"
+	"net/http"
 	"os"
 	"sync"
 	"sync/atomic"
@@ -30,6 +34,10 @@ type Config struct {
 	ZstdLevel     int
 	BufferSize    int
 
+	// MetricsListenAddr serves Prometheus metrics at /metrics; empty
+	// disables the endpoint.
+	MetricsListenAddr string
+
 	Now    func() time.Time
 	Logger *slog.Logger
 }
@@ -53,6 +61,17 @@ func Run(ctx context.Context, cfg Config) error {
 	}
 	if err := os.MkdirAll(cfg.ArchiveDir, 0o755); err != nil {
 		return err
+	}
+
+	// Bind before connecting to the broker so a bad address fails startup
+	// without broker side effects.
+	var metricsLn net.Listener
+	if cfg.MetricsListenAddr != "" {
+		ln, err := net.Listen("tcp", cfg.MetricsListenAddr)
+		if err != nil {
+			return fmt.Errorf("metrics listener: %w", err)
+		}
+		metricsLn = ln
 	}
 
 	var st stats
@@ -94,6 +113,21 @@ func Run(ctx context.Context, cfg Config) error {
 
 	writer := archive.NewWriter(cfg.ArchiveDir, cfg.Now, cfg.FlushInterval > 0)
 	sweeper := compress.NewSweeper(cfg.ArchiveDir, cfg.ZstdLevel, cfg.Logger)
+
+	if metricsLn != nil {
+		srv := &http.Server{Handler: metricsHandler(&st, writer.Repaired, func() int { return len(lines) })}
+		go func() {
+			cfg.Logger.Info("metrics listening", "addr", metricsLn.Addr().String())
+			if err := srv.Serve(metricsLn); err != nil && !errors.Is(err, http.ErrServerClosed) {
+				cfg.Logger.Error("metrics server failed", "error", err)
+			}
+		}()
+		defer func() {
+			shutdownCtx, cancel := context.WithTimeout(context.Background(), metricsShutdownGrace)
+			defer cancel()
+			_ = srv.Shutdown(shutdownCtx)
+		}()
+	}
 
 	sweepReq := make(chan struct{}, 1)
 	var sweepWG sync.WaitGroup

@@ -2,7 +2,7 @@
 
 Liveness, logging, process lifecycle, subcommands, and the acceptance contract.
 
-Governed configuration: `HEARTBEAT_FILE`, `FLUSH_INTERVAL`.
+Governed configuration: `HEARTBEAT_FILE`, `FLUSH_INTERVAL`, `METRICS_LISTEN_ADDR`.
 
 ## Flush and stats tick
 
@@ -20,6 +20,28 @@ contract: an mtime older than 5 minutes means unhealthy (used by the `health`
 subcommand and external alerting). Because the heartbeat is touched only on
 the flush tick, `FLUSH_INTERVAL` must stay well under 5 minutes — above that,
 a healthy process reports unhealthy.
+
+## Metrics
+
+Opt-in, off by default: setting `METRICS_LISTEN_ADDR` (e.g. `:9090`) serves
+Prometheus metrics at `GET /metrics`; when empty no listener is opened. The
+endpoint exposes application metrics only — no Go runtime or process
+collectors:
+
+| Metric | Type | Meaning |
+|---|---|---|
+| `mqtt_archive_sink_lines_total` | counter | lines accepted into the write buffer |
+| `mqtt_archive_sink_bytes_total` | counter | bytes of accepted lines incl. trailing newline |
+| `mqtt_archive_sink_skipped_total` | counter | records skipped for exceeding the 16 MiB limit |
+| `mqtt_archive_sink_repaired_total` | counter | crash-truncated lines terminated on file open |
+| `mqtt_archive_sink_reconnects_total` | counter | broker connection losses |
+| `mqtt_archive_sink_connected` | gauge | 1 while connected to the broker, else 0 |
+| `mqtt_archive_sink_buffered_messages` | gauge | messages waiting in the receive buffer |
+
+The metric set mirrors the stats log record 1:1. An unbindable address fails
+startup (fatal, before connecting to the broker); serve errors after a
+successful bind are logged and the sink keeps archiving. The listener shuts
+down gracefully with the process.
 
 ## Logging
 

@@ -11,6 +11,9 @@ services:
     restart: always
     environment:
       MQTT_BROKER: tcp://broker:1883 # point at your broker
+      # METRICS_LISTEN_ADDR: ":9090" # opt-in Prometheus /metrics endpoint
+    # ports:
+    #   - "9090:9090" # scrape the metrics endpoint from the host
     volumes:
       - archive:/var/lib/mqtt-archive
 

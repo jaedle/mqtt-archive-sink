@@ -73,16 +73,17 @@ func runSink(logger *slog.Logger) error {
 	defer stop()
 
 	return app.Run(ctx, app.Config{
-		Broker:        broker,
-		Topic:         envOr("MQTT_TOPIC", "#"),
-		ClientID:      envOr("MQTT_CLIENT_ID", "archiver"),
-		ArchiveDir:    archiveDir(),
-		FlushInterval: flushInterval,
-		FsyncInterval: fsyncInterval,
-		HeartbeatFile: heartbeatFile(),
-		ZstdLevel:     zstdLevel,
-		BufferSize:    bufferSize,
-		Logger:        logger,
+		Broker:            broker,
+		Topic:             envOr("MQTT_TOPIC", "#"),
+		ClientID:          envOr("MQTT_CLIENT_ID", "archiver"),
+		ArchiveDir:        archiveDir(),
+		FlushInterval:     flushInterval,
+		FsyncInterval:     fsyncInterval,
+		HeartbeatFile:     heartbeatFile(),
+		ZstdLevel:         zstdLevel,
+		BufferSize:        bufferSize,
+		MetricsListenAddr: os.Getenv("METRICS_LISTEN_ADDR"),
+		Logger:            logger,
 	})
 }
 

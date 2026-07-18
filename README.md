@@ -26,10 +26,14 @@ docker run -d --restart always \
 | `HEARTBEAT_FILE` | `<ARCHIVE_DIR>/heartbeat` |
 | `ZSTD_LEVEL` | `19` |
 | `BUFFER_SIZE` | `10000` |
+| `METRICS_LISTEN_ADDR` | — (disabled) |
 
 Broker credentials go in the URL: `MQTT_BROKER=tcp://user:pass@broker:1883`.
 Keep `FLUSH_INTERVAL` well under 5 minutes — the heartbeat is touched on the
 flush tick and the health check fails once it is older than 5 minutes.
+Set `METRICS_LISTEN_ADDR=:9090` to expose Prometheus metrics at `/metrics`
+(application metrics only, off by default — see
+[docs/spec/operations.md](docs/spec/operations.md)).
 
 ## Reading archives
 
