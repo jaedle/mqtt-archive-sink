@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"os"
 	"path/filepath"
+	"sync/atomic"
 	"time"
 )
 
@@ -17,10 +18,12 @@ type Writer struct {
 	now      func() time.Time
 	buffered bool
 
-	f        *os.File
-	bw       *bufio.Writer
-	date     string
-	repaired int64
+	f    *os.File
+	bw   *bufio.Writer
+	date string
+	// repaired is atomic: written on the run-loop goroutine, read by the
+	// metrics endpoint's HTTP goroutine.
+	repaired atomic.Int64
 }
 
 func NewWriter(dir string, now func() time.Time, buffered bool) *Writer {
@@ -88,7 +91,7 @@ func (w *Writer) Close() error {
 
 // Repaired counts crash-truncated lines terminated on open (SPEC.md
 // behavior 8).
-func (w *Writer) Repaired() int64 { return w.repaired }
+func (w *Writer) Repaired() int64 { return w.repaired.Load() }
 
 func (w *Writer) today() string {
 	return w.now().UTC().Format(DateFormat)
@@ -106,7 +109,7 @@ func (w *Writer) open(date string) error {
 		return err
 	}
 	if repaired {
-		w.repaired++
+		w.repaired.Add(1)
 	}
 	if err := syncDir(w.dir); err != nil {
 		_ = f.Close()
