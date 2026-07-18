@@ -99,6 +99,17 @@ indirection avoids a known issue with spaces in args on some clients):
 }
 ```
 
+### Agent skill
+
+[skills/mqtt-archive/SKILL.md](skills/mqtt-archive/SKILL.md) teaches agents
+the non-obvious parts of the MCP (UTC days, cursor rules, tail semantics, bulk
+download). Install with [skills](https://github.com/vercel-labs/skills):
+
+```sh
+npx skills add jaedle/mqtt-archive-sink            # project-level
+npx skills add -g jaedle/mqtt-archive-sink         # user-level
+```
+
 ## Subcommands
 
 - `mqtt-archive-sink verify [dir]` — decode-check all archives (skips current
