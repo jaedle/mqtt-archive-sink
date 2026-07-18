@@ -4,6 +4,8 @@ verify:
   enabled: true
   docker: true
 
+prs: {}
+
 release:
   enabled: true
   docker: true
