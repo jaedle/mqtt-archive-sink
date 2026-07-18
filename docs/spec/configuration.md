@@ -15,3 +15,4 @@ govern.
 | `HEARTBEAT_FILE` | `<ARCHIVE_DIR>/heartbeat` | Liveness file |
 | `ZSTD_LEVEL` | `19` | Compression level (batch, once per day) |
 | `BUFFER_SIZE` | `10000` | Bounded receive buffer (messages) |
+| `METRICS_LISTEN_ADDR` | — (disabled) | Optional Prometheus `/metrics` listen address, e.g. `:9090`; empty disables the endpoint (see [operations](operations.md)) |
