@@ -9,8 +9,7 @@ prs: {}
 release:
   enabled: true
   docker: true
-
-secrets:
-  - docker-username
-  - docker-password
-  - github-token
+  secrets:
+    - docker-username
+    - docker-password
+    - github-token
