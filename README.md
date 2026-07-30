@@ -162,3 +162,12 @@ Changes go branch → PR, never directly to `main` — see the git workflow in
 - There is no built-in retention: the archive grows forever. Prune old `.zst`
   files externally (cron, manual) — deleting closed days is safe; the sink
   never touches days other than the current one.
+- The MCP server speaks plain HTTP: the bearer token and the whole archive
+  travel unencrypted. Keep port 8080 on a trusted network, or terminate TLS in
+  front of it — the compose example publishes it on all interfaces.
+
+## License
+
+[MIT](LICENSE). Dependencies are vendored under `vendor/` and keep their own
+licenses — all permissive except `eclipse/paho.mqtt.golang`, which is EPL-2.0
+and is used unmodified.
