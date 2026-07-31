@@ -18,6 +18,8 @@ docker run -d --restart always \
 | Variable | Default |
 |---|---|
 | `MQTT_BROKER` | — (required) |
+| `MQTT_USERNAME` | — (none) |
+| `MQTT_PASSWORD` | — (none) |
 | `MQTT_TOPIC` | `#` |
 | `MQTT_CLIENT_ID` | `archiver` |
 | `ARCHIVE_DIR` | `/var/lib/mqtt-archive` |
@@ -28,7 +30,9 @@ docker run -d --restart always \
 | `BUFFER_SIZE` | `10000` |
 | `METRICS_LISTEN_ADDR` | — (disabled) |
 
-Broker credentials go in the URL: `MQTT_BROKER=tcp://user:pass@broker:1883`.
+Broker credentials go in `MQTT_USERNAME` / `MQTT_PASSWORD`. Credentials inside
+`MQTT_BROKER` (`tcp://user:pass@broker:1883`) are rejected at startup — the
+broker URL is logged, so it must not carry a password.
 Keep `FLUSH_INTERVAL` well under 5 minutes — the heartbeat is touched on the
 flush tick and the health check fails once it is older than 5 minutes.
 Set `METRICS_LISTEN_ADDR=:9090` to expose Prometheus metrics at `/metrics`

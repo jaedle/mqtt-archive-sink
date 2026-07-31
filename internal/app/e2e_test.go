@@ -31,6 +31,18 @@ func TestArchivesPublishedMessages(t *testing.T) {
 	assertTimestampsAreRecent(t, records)
 }
 
+func TestArchivesFromAuthenticatedBroker(t *testing.T) {
+	dir := t.TempDir()
+	broker := startAuthBroker(t, freeAddr(t))
+	sink := startSink(t, dir, broker.addr, withCredentials(testUsername, testPassword))
+	broker.waitSubscribed()
+
+	broker.publish("sensors/temp", []byte("21.5"))
+
+	waitForLineCount(t, todayFile(dir), 1)
+	sink.stop()
+}
+
 func TestHeartbeatTouchedWithoutTraffic(t *testing.T) {
 	dir := t.TempDir()
 	broker := startBroker(t, freeAddr(t))

@@ -76,6 +76,8 @@ func runSink(logger *slog.Logger) error {
 		Broker:            broker,
 		Topic:             envOr("MQTT_TOPIC", "#"),
 		ClientID:          envOr("MQTT_CLIENT_ID", "archiver"),
+		Username:          os.Getenv("MQTT_USERNAME"),
+		Password:          os.Getenv("MQTT_PASSWORD"),
 		ArchiveDir:        archiveDir(),
 		FlushInterval:     flushInterval,
 		FsyncInterval:     fsyncInterval,

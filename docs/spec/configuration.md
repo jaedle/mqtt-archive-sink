@@ -6,7 +6,9 @@ govern.
 
 | Variable | Default | Description |
 |---|---|---|
-| `MQTT_BROKER` | — (required) | Broker URL, e.g. `tcp://broker:1883` or `mqtts://broker:8883` (TLS); credentials as URL userinfo, e.g. `tcp://user:pass@broker:1883` |
+| `MQTT_BROKER` | — (required) | Broker URL, e.g. `tcp://broker:1883` or `mqtts://broker:8883` (TLS); must not contain credentials |
+| `MQTT_USERNAME` | — (none) | Broker username, sent in the MQTT CONNECT packet |
+| `MQTT_PASSWORD` | — (none) | Broker password; requires `MQTT_USERNAME` |
 | `MQTT_TOPIC` | `#` | Subscription topic filter |
 | `MQTT_CLIENT_ID` | `archiver` | Client ID (stable ⇒ broker session queues while disconnected) |
 | `ARCHIVE_DIR` | `/var/lib/mqtt-archive` | Archive directory |

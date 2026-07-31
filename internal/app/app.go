@@ -26,6 +26,8 @@ type Config struct {
 	Broker   string
 	Topic    string
 	ClientID string
+	Username string
+	Password string
 
 	ArchiveDir    string
 	FlushInterval time.Duration
@@ -77,10 +79,12 @@ func Run(ctx context.Context, cfg Config) error {
 	var st stats
 	lines := make(chan []byte, cfg.BufferSize)
 
-	client := mqtt.Connect(mqtt.Config{
+	client, err := mqtt.Connect(mqtt.Config{
 		Broker:   cfg.Broker,
 		Topic:    cfg.Topic,
 		ClientID: cfg.ClientID,
+		Username: cfg.Username,
+		Password: cfg.Password,
 		Logger:   cfg.Logger,
 		OnConnectionUp: func() {
 			st.connected.Store(true)
@@ -110,6 +114,12 @@ func Run(ctx context.Context, cfg Config) error {
 			}
 		},
 	})
+	if err != nil {
+		if metricsLn != nil {
+			_ = metricsLn.Close()
+		}
+		return err
+	}
 
 	writer := archive.NewWriter(cfg.ArchiveDir, cfg.Now, cfg.FlushInterval > 0)
 	sweeper := compress.NewSweeper(cfg.ArchiveDir, cfg.ZstdLevel, cfg.Logger)

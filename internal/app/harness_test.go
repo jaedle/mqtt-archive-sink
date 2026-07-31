@@ -35,6 +35,9 @@ const (
 	maxRecordScan = 32 << 20
 	// clockSkewTolerance bounds the drift between wall-clock now and a record's timestamp.
 	clockSkewTolerance = time.Minute
+	// testUsername and testPassword are the credentials the authenticating broker demands.
+	testUsername = "sink"
+	testPassword = "s3cret"
 )
 
 type record struct {
@@ -81,11 +84,29 @@ func freeAddr(t *testing.T) string {
 
 func startBroker(t *testing.T, addr string) *testBroker {
 	t.Helper()
+	return startBrokerWithAuth(t, addr, new(auth.AllowHook), nil)
+}
+
+// startAuthBroker refuses every client that does not present testUsername and
+// testPassword, so reaching SUBSCRIBE proves the sink authenticated.
+func startAuthBroker(t *testing.T, addr string) *testBroker {
+	t.Helper()
+	ledger := &auth.Ledger{
+		Auth: auth.AuthRules{{Username: testUsername, Password: testPassword, Allow: true}},
+		// A rule with no filters allows every topic; with an empty ACL the
+		// broker would deny the sink's subscribe.
+		ACL: auth.ACLRules{{}},
+	}
+	return startBrokerWithAuth(t, addr, new(auth.Hook), &auth.Options{Ledger: ledger})
+}
+
+func startBrokerWithAuth(t *testing.T, addr string, authHook mochi.Hook, authConfig any) *testBroker {
+	t.Helper()
 	server := mochi.New(&mochi.Options{
 		InlineClient: true,
 		Logger:       slog.New(slog.NewTextHandler(io.Discard, nil)),
 	})
-	require.NoError(t, server.AddHook(new(auth.AllowHook), nil))
+	require.NoError(t, server.AddHook(authHook, authConfig))
 	hook := &subscribedHook{ch: make(chan struct{}, 1)}
 	require.NoError(t, server.AddHook(hook, nil))
 	require.NoError(t, server.AddListener(listeners.NewTCP(listeners.Config{ID: "tcp", Address: addr})))
@@ -146,6 +167,13 @@ func startSink(t *testing.T, dir string, broker string, mutate ...func(*app.Conf
 	s := &sink{t: t, dir: dir, cancel: cancel, done: done}
 	t.Cleanup(s.stopIgnoreError)
 	return s
+}
+
+func withCredentials(username, password string) func(*app.Config) {
+	return func(c *app.Config) {
+		c.Username = username
+		c.Password = password
+	}
 }
 
 func (s *sink) stop() {
