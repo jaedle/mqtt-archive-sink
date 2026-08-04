@@ -11,6 +11,8 @@ services:
     restart: always
     environment:
       MQTT_BROKER: tcp://broker:1883 # point at your broker
+      # MQTT_USERNAME: archiver # broker credentials never go in MQTT_BROKER
+      # MQTT_PASSWORD: ${MQTT_PASSWORD}
       # METRICS_LISTEN_ADDR: ":9090" # opt-in Prometheus /metrics endpoint
     # ports:
     #   - "9090:9090" # scrape the metrics endpoint from the host
