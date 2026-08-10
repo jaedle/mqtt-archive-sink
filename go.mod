@@ -4,7 +4,7 @@ go 1.26.5
 
 require (
 	github.com/eclipse/paho.mqtt.golang v1.5.1
-	github.com/klauspost/compress v1.19.1
+	github.com/klauspost/compress v1.19.2
 	github.com/mochi-mqtt/server/v2 v2.7.9
 	github.com/modelcontextprotocol/go-sdk v1.7.0
 	github.com/prometheus/client_golang v1.24.1
