@@ -33,7 +33,7 @@ github.com/mochi-mqtt/server/v2/listeners
 github.com/mochi-mqtt/server/v2/mempool
 github.com/mochi-mqtt/server/v2/packets
 github.com/mochi-mqtt/server/v2/system
-# github.com/modelcontextprotocol/go-sdk v1.7.0
+# github.com/modelcontextprotocol/go-sdk v1.8.0
 ## explicit; go 1.25.0
 github.com/modelcontextprotocol/go-sdk/auth
 github.com/modelcontextprotocol/go-sdk/internal/authutil
