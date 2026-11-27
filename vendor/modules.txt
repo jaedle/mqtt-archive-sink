@@ -4,8 +4,8 @@ github.com/beorn7/perks/quantile
 # github.com/cespare/xxhash/v2 v2.3.0
 ## explicit; go 1.11
 github.com/cespare/xxhash/v2
-# github.com/eclipse/paho.mqtt.golang v1.5.1
-## explicit; go 1.24.0
+# github.com/eclipse/paho.mqtt.golang v1.5.2
+## explicit; go 1.25.0
 github.com/eclipse/paho.mqtt.golang
 github.com/eclipse/paho.mqtt.golang/packets
 # github.com/google/jsonschema-go v0.4.3
